@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RSVP | Mexico City at 39</title>
+<style>
+:root{--bg:#f4f7f1;--paper:#ffffff;--ink:#16301f;--muted:#5d6f63;--line:#dbe4d8;--green:#1f4d33;--brass:#b08a4a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding:40px 20px 64px}
+.eyebrow{letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--brass);margin:0 0 10px}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:40px;line-height:1.1;margin:0 0 12px;color:var(--green)}
+.lead{color:var(--muted);margin:0 0 28px}
+.facts{display:flex;gap:24px;flex-wrap:wrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0;margin-bottom:28px;font-size:14px}
+.facts b{display:block;font-weight:600}
+form{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:24px}
+label,legend{display:block;font-size:13px;font-weight:600;margin:0 0 6px}
+fieldset{border:0;padding:0;margin:0 0 20px}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.opts label{margin:0;font-weight:500}
+.opts input{position:absolute;opacity:0}
+.opts span{display:block;text-align:center;padding:12px 6px;border:1px solid var(--line);border-radius:4px;cursor:pointer;font-size:14px}
+.opts input:checked+span{background:var(--green);color:#fff;border-color:var(--green)}
+.opts input:focus-visible+span{outline:2px solid var(--brass);outline-offset:2px}
+.f{margin-bottom:18px}
+input[type=text],input[type=tel],select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:4px;font:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:84px;resize:vertical}
+button{width:100%;padding:14px;border:0;border-radius:4px;background:var(--green);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+#done{display:none;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:28px;text-align:center}
+#done h2{font-family:Georgia,serif;font-weight:400;color:var(--green);margin:0 0 8px}
+#err{display:none;color:#8a2b1f;font-size:14px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Birthday weekend</p>
+  <h1>Mexico City at 39</h1>
+  <p class="lead">Andrew's birthday weekend. Let me know if you are in so I can lock in the hotel and book the tables.</p>
+  <div class="facts">
+    <div><b>Dates</b>Thu Feb 18 to Sun Feb 21, 2027</div>
+    <div><b>Estimate</b>About $1,500 per person</div>
+    <div><b>Reply by</b>Dec 15, 2026</div>
+  </div>
+
+  <form id="f" novalidate>
+    <fieldset>
+      <legend>Are you in?</legend>
+      <div class="opts">
+        <label><input type="radio" name="status" value="In" required><span>I'm in</span></label>
+        <label><input type="radio" name="status" value="Maybe"><span>Maybe</span></label>
+        <label><input type="radio" name="status" value="Can't make it"><span>Can't make it</span></label>
+      </div>
+    </fieldset>
+    <div class="f"><label for="name">Your name</label><input id="name" name="name" type="text" autocomplete="name" required></div>
+    <div class="f"><label for="phone">Phone (optional)</label><input id="phone" name="phone" type="tel" autocomplete="tel"></div>
+    <div class="f"><label for="from">Flying from</label><input id="from" name="flying_from" type="text" placeholder="City"></div>
+    <div class="f"><label for="room">Room</label>
+      <select id="room" name="room">
+        <option>Happy to share a double</option>
+        <option>I want my own room</option>
+        <option>I'll bring a roommate (tell me who below)</option>
+      </select></div>
+    <div class="f"><label for="notes">Anything I should know?</label><textarea id="notes" name="notes" placeholder="Dietary needs, arrival time, questions"></textarea></div>
+    <button id="btn" type="submit">Send my RSVP</button>
+    <div id="err"></div>
+    <p class="note">Your reply goes only to Andrew.</p>
+    <p class="note"><b>Heads up:</b> we will coordinate the trip on WhatsApp, so please download it if you do not have it already.</p>
+  </form>
+
+  <div id="done"><h2>You're on the list.</h2><p id="doneMsg">Thanks. I'll follow up with details soon.</p></div>
+</div>
+
+<script>
+var ENDPOINT = "https://formspree.io/f/meaawpov";
+var f = document.getElementById("f"), btn = document.getElementById("btn"), err = document.getElementById("err");
+f.addEventListener("submit", function(e){
+  e.preventDefault();
+  err.style.display = "none";
+  var d = {};
+  new FormData(f).forEach(function(v,k){ d[k] = v; });
+  if(!d.status || !d.name || !d.name.trim()){
+    err.textContent = "Please choose an answer and add your name.";
+    err.style.display = "block"; return;
+  }
+  d._subject = "Mexico City RSVP: " + d.name + " (" + d.status + ")";
+  btn.disabled = true; btn.textContent = "Sending...";
+  fetch(ENDPOINT, {method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body:JSON.stringify(d)})
+    .then(function(r){ if(!r.ok) throw new Error("bad"); show(d); })
+    .catch(function(){
+      btn.disabled = false; btn.textContent = "Send my RSVP";
+      err.textContent = "That did not go through. Please text Andrew your answer instead.";
+      err.style.display = "block";
+    });
+});
+function show(d){
+  f.style.display = "none";
+  var m = document.getElementById("doneMsg");
+  if(d.status === "Can't make it") m.textContent = "Thanks for letting me know. We'll miss you.";
+  document.getElementById("done").style.display = "block";
+}
+</script>
+</body>
+</html>
